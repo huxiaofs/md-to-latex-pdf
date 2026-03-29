@@ -3,8 +3,41 @@
 一个 [Claude Code](https://claude.ai/code) Skill，将本地 Markdown 文件渲染为 **LaTeX 风格的高质量 PDF**。
 
 - 排版样式来自 [typora-latex-theme](https://github.com/Keldos-Li/typora-latex-theme)（仿 LaTeX 论文排版）
-- 数学公式由 **MathJax v3 server-side SVG** 渲染，效果与 `pdflatex` 默认字体完全一致
+- 数学公式由 **MathJax v3 server-side SVG** 渲染，效果与 `pdflatex` 默认 Computer Modern 字体完全一致
 - 使用 Puppeteer（Chromium）生成 PDF，无需安装 LaTeX 发行版
+
+---
+
+## 效果预览
+
+👉 [查看示例 PDF](examples/demo.pdf) · [查看源 Markdown](examples/demo.md)
+
+示例文档涵盖：数学公式（行内 / 展示）、中英文混排、表格、代码块、脚注、自动章节编号。
+
+部分公式预览（摘自示例）：
+
+$$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right) V$$
+
+$$\hat{f}(\xi) = \int_{-\infty}^{+\infty} f(x)\, e^{-2\pi i x \xi}\, \mathrm{d}x$$
+
+---
+
+## 使用背景：为什么不直接用 MPE 导出 PDF？
+
+我平时在 **VS Code** 里用 [Markdown Preview Enhanced (MPE)](https://marketplace.visualstudio.com/items?itemName=shd101wyy.markdown-preview-enhanced) 插件编辑和预览 Markdown。MPE 体验很好，但在导出 PDF 时遇到了一些问题：
+
+| 导出方式 | 问题 |
+|----------|------|
+| MPE + Chrome 引擎 | 默认字体偏大，排版不够紧凑，缺少 LaTeX 风格的衬线字感 |
+| MPE + PrinceXML 引擎 | 需要单独安装 PrinceXML；免费版会在 PDF 首页添加水印 |
+
+**这个 skill 的解法：**
+
+- 排版直接套用 typora-latex-theme 的 CSS，使用 Latin Modern Roman 字体（即 LaTeX 默认字体族），9.5pt 字号，1.8cm 页边距，还原论文感
+- 数学公式用 MathJax v3 在 Node.js 端预渲染为 SVG，内嵌进 HTML，Chromium 打印时无需加载外部字体文件，渲染结果与 `pdflatex` 产物视觉上完全一致
+- 整个流程完全离线，不依赖 LaTeX 发行版，不依赖 CDN
+
+所以我的工作流是：**VS Code + MPE 编辑预览 → Claude Code `/md-to-latex-pdf` 导出 PDF**。
 
 ---
 
@@ -25,7 +58,7 @@
 
 ## 🔧 环境要求
 
-- macOS（主题 CSS 针对 macOS 字体编译；其他系统可修改 `setup.mjs` 中的 `$os`）
+- macOS（主题 CSS 针对 macOS 字体编译；其他系统可修改 `setup.mjs` 中的 `$os` 变量）
 - Node.js ≥ 18
 - Git
 
@@ -38,7 +71,7 @@
 ### 1. 克隆到 Claude Code Skill 目录
 
 ```bash
-git clone https://github.com/jiangchaoyong/md-to-latex-pdf \
+git clone https://github.com/huxiaofs/md-to-latex-pdf \
   ~/.claude/skills/md-to-latex-pdf
 ```
 
@@ -66,7 +99,7 @@ node ~/.claude/skills/md-to-latex-pdf/scripts/setup.mjs
 /md-to-latex-pdf notes.md --page-break-h2 --no-numbers
 ```
 
-也可以直接运行脚本：
+也可以直接运行脚本（不需要 Claude Code）：
 
 ```bash
 node ~/.claude/skills/md-to-latex-pdf/scripts/convert.mjs \
@@ -88,43 +121,22 @@ node ~/.claude/skills/md-to-latex-pdf/scripts/convert.mjs \
 
 ---
 
-## 📄 Markdown 示例
-
-```markdown
----
-title: 示例文档
-author: 张三
-date: 2026-03-29
----
-
-# 示例文档
-
-## 引言
-
-行内公式：$e^{i\pi} + 1 = 0$
-
-## 推导
-
-展示公式：
-
-$$
-\hat{f}(\xi) = \int_{-\infty}^{\infty} f(x)\, e^{-2\pi i x \xi}\, dx
-$$
-```
-
----
-
 ## 🏗️ 项目结构
 
 ```
 md-to-latex-pdf/
-├── SKILL.md          # Claude Code skill 定义
+├── README.md            # 本文档
+├── LICENSE              # MIT
+├── SKILL.md             # Claude Code skill 定义
+├── examples/
+│   ├── demo.md          # 效果演示源文件
+│   └── demo.pdf         # 效果演示输出
 ├── scripts/
-│   ├── package.json  # Node.js 依赖声明
-│   ├── setup.mjs     # 初始化脚本（首次运行）
-│   └── convert.mjs   # Markdown → PDF 转换主脚本
-├── cache/            # 编译好的主题 CSS（由 setup.mjs 生成，已 .gitignore）
-└── theme/            # typora-latex-theme 源码（由 setup.mjs 拉取，已 .gitignore）
+│   ├── package.json     # Node.js 依赖声明
+│   ├── setup.mjs        # 初始化脚本（首次运行）
+│   └── convert.mjs      # Markdown → PDF 转换主脚本
+├── cache/               # 编译好的主题 CSS（由 setup.mjs 生成，已 .gitignore）
+└── theme/               # typora-latex-theme 源码（由 setup.mjs 拉取，已 .gitignore）
 ```
 
 ---

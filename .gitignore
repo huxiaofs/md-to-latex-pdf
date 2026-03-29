@@ -2,5 +2,6 @@ scripts/node_modules/
 cache/
 theme/
 *.pdf
+!examples/*.pdf
 *.html
 .DS_Store
