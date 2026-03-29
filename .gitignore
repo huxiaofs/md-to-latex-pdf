@@ -1,0 +1,6 @@
+scripts/node_modules/
+cache/
+theme/
+*.pdf
+*.html
+.DS_Store
